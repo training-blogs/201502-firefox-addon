@@ -1,6 +1,7 @@
 var widgets = require('sdk/widget');
 var data = require('sdk/self').data;
 var pageMod = require('sdk/page-mod');
+var panels = require('sdk/panel');
 
 var annotatorIsOn = false;
 
@@ -54,10 +55,28 @@ var selector = pageMod.PageMod({
         worker.postMessage(annotatorIsOn);
         selectors.push(worker);
         worker.port.on('show', function(data) {
-            console.log(data);
+            annotationEditor.annotationAnchor = data;
+            annotationEditor.show();
         });
         worker.on('detach', function() {
             detachWorker(this, selectors);
         });
+    }
+});
+
+var annotationEditor = panels.Panel({
+    width: 220,
+    height: 220,
+    contentURL: data.url('editor/annotation-editor.html'),
+    contentScriptFile: data.url('editor/annotation-editor.js'),
+    onMessage: function(annotationText) {
+        if (annotationText) {
+            console.log(this.annotationAnchor);
+            console.log(annotationText);
+        }
+        annotationEditor.hide();
+    },
+    onShow: function() {
+        this.postMessage('focus');
     }
 });
