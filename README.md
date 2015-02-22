@@ -7,11 +7,11 @@ Following the Firefox Add-on SDK tutorials https://developer.mozilla.org/en-US/A
 1. source bin/activate
 1. cfx
 
-> source activate.sh
+`source activate.sh`
 
 ### Getting started
 
-_... creating a simple add-on using the SDK._
+> creating a simple add-on using the SDK.
 
 https://developer.mozilla.org/en-US/Add-ons/SDK/Tutorials/Getting_started
 
@@ -19,7 +19,7 @@ https://developer.mozilla.org/en-US/Add-ons/SDK/Tutorials/Getting_started
 
 ### Putting it together: Annotator add-on
 
-_... add-on that uses many of the SDK's high-level APIs._
+> add-on that uses many of the SDK's high-level APIs.
 
 https://developer.mozilla.org/en-US/Add-ons/SDK/Tutorials/Annotator
 
