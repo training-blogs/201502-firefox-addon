@@ -2,6 +2,8 @@ var widgets = require('sdk/widget');
 var data = require('sdk/self').data;
 var pageMod = require('sdk/page-mod');
 var panels = require('sdk/panel');
+var simpleStorage = require('sdk/simple-storage');
+var notifications = require("sdk/notifications");
 
 var annotatorIsOn = false;
 
@@ -37,13 +39,16 @@ exports.main = function() {
 
     widget.port.on('left-click', function() {
         console.log('activate/deactivate');
-        widget.contentURL = toggleActivation() ?
-            data.url('widget/pencil-on.png') :
-            data.url('widget/pencil-off.png');
+        widget.contentURL = toggleActivation() ? data.url('widget/pencil-on.png') : data.url('widget/pencil-off.png');
     });
 
     widget.port.on('right-click', function() {
+        notifications.notify({
+            title: 'test notif title',
+            text: 'test notif text'
+        });
         console.log('show annotation list');
+        annotationList.show();
     });
 };
 
@@ -71,12 +76,51 @@ var annotationEditor = panels.Panel({
     contentScriptFile: data.url('editor/annotation-editor.js'),
     onMessage: function(annotationText) {
         if (annotationText) {
-            console.log(this.annotationAnchor);
-            console.log(annotationText);
+            handleNewAnnotation(annotationText, this.annotationAnchor);
         }
         annotationEditor.hide();
     },
     onShow: function() {
         this.postMessage('focus');
+    }
+});
+
+if (!simpleStorage.storage.annotations) {
+    simpleStorage.storage.annotations = [];
+}
+
+function handleNewAnnotation(annotationText, anchor) {
+    var newAnnotation = new Annotation(annotationText, anchor);
+    simpleStorage.storage.annotations.push(newAnnotation);
+}
+
+function Annotation(annotationText, anchor) {
+    this.annotationText = annotationText;
+    this.url = anchor[0];
+    this.ancestorId = anchor[1];
+    this.anchorText = anchor[2];
+}
+
+var annotationList = panels.Panel({
+    width: 420,
+    height: 200,
+    contentURL: data.url('list/annotation-list.html'),
+    contentScriptFile: [data.url('jquery-1.11.2.js'), data.url('list/annotation-list.js')],
+    contentScriptWhen: 'ready',
+    onShow: function() {
+        this.postMessage(simpleStorage.storage.annotations);
+    },
+    onMessage: function(message) {
+        require('sdk/tabs').open(message);
+    }
+});
+
+simpleStorage.on("OverQuota", function() {
+    notifications.notify({
+        title: 'Storage space exceeded',
+        text: 'Removing recent annotations'
+    });
+    while (simpleStorage.quotaUsage > 1) {
+        simpleStorage.storage.annotations.pop();
     }
 });
