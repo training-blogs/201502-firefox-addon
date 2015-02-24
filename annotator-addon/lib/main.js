@@ -92,6 +92,7 @@ if (!simpleStorage.storage.annotations) {
 function handleNewAnnotation(annotationText, anchor) {
     var newAnnotation = new Annotation(annotationText, anchor);
     simpleStorage.storage.annotations.push(newAnnotation);
+    updateMatchers();
 }
 
 function Annotation(annotationText, anchor) {
@@ -122,5 +123,47 @@ simpleStorage.on("OverQuota", function() {
     });
     while (simpleStorage.quotaUsage > 1) {
         simpleStorage.storage.annotations.pop();
+    }
+});
+
+var matchers = [];
+
+var matcher = pageMod.PageMod({
+    include: ['*'],
+    contentScriptWhen: 'ready',
+    contentScriptFile: [data.url('jquery-1.11.2.js'), data.url('matcher.js')],
+    onAttach: function(worker) {
+        if (simpleStorage.storage.annotations) {
+            worker.postMessage(simpleStorage.storage.annotations);
+        }
+        worker.port
+            .on('show', function(data) {
+                annotation.content = data;
+                annotation.show();
+            })
+            .on('hide', function() {
+                annotation.content = null;
+                annotation.hide();
+            })
+            .on('detach', function() {
+                detachWorker(this, matchers);
+            });
+        matchers.push(worker);
+    }
+});
+
+function updateMatchers() {
+    matchers.forEach(function(matcher) {
+        matcher.postMessage(simpleStorage.storage.annotations);
+    });
+}
+
+var annotation = panels.Panel({
+    width: 200,
+    height: 180,
+    contentURL: data.url('annotation/annotation.html'),
+    contentScriptFile: [data.url('jquery-1.11.2.js'), data.url('annotation/annotation.js')],
+    onShow: function() {
+        this.postMessage(this.content);
     }
 });
